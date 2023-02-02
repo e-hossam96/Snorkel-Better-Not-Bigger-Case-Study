@@ -43,17 +43,17 @@ def main():
         output = pipe_cls(example['text'], labels)
         label = output['labels'][0]
         score = output['scores'][0]
-        if score >= 0.5:
+        if score >= 0.25:
             return {args.model_name: str2int[label]}
         else:
             return {args.model_name: -1}
     
     ledgar['train'] = ledgar['train'].map(get_label)
-    ledgar['train'].to_json(f'data/train_{args.start_idx}_{args.end_idx}.json')
+    ledgar['train'].to_json(f'data/{args.model_name}/train_{args.start_idx}_{args.end_idx}.json')
     
     
     ledgar['validation'] = ledgar['validation'].map(get_label)
-    ledgar['validation'].to_json(f'data/valid_{args.start_idx}_{args.end_idx}.json')
+    ledgar['validation'].to_json(f'data/{args.model_name}/valid_{args.start_idx}_{args.end_idx}.json')
 
     
 if __name__ == '__main__':
