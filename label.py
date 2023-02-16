@@ -10,12 +10,6 @@ def parse():
                         help="Zero-shot classification models from hugging face."
                         "Example: facebook/bart-large-mnli")
     
-    parser.add_argument("--start_idx", default=0, type=int, required=True, 
-                        help="Starting range of the operation.")
-    
-    parser.add_argument("--end_idx", default=None, type=int, required=True, 
-                        help="Ending range of the operation.")
-    
     args = parser.parse_args()
     return args
 
@@ -26,14 +20,14 @@ def main():
     
     print(f'Arguments: {args}')
     
-    ledgar = load_dataset('lex_glue', name='ledgar')
-    labels = ledgar['train'].features['label'].names
+    imdb_data = load_dataset('imdb')
+    labels = imdb_data['train'].features['label'].names
     
     int2str = {i: j for i, j in enumerate(labels)}
     str2int = {j: i for i, j in enumerate(labels)}
     
-    ledgar['train'] = ledgar['train'].select(range(args.start_idx, args.end_idx))
-    ledgar['validation'] = ledgar['validation'].select(range(args.start_idx, args.end_idx))
+    imdb_data['train'] = imdb_data['train'].shuffle(seed=42)
+    imdb_data['test'] = imdb_data['test'].shuffle(seed=42)
     
     
     pipe_cls = pipeline("zero-shot-classification",
@@ -43,17 +37,17 @@ def main():
         output = pipe_cls(example['text'], labels)
         label = output['labels'][0]
         score = output['scores'][0]
-        if score >= 0.25:
+        if score > 0.50:
             return {args.model_name: str2int[label]}
         else:
             return {args.model_name: -1}
     
-    ledgar['train'] = ledgar['train'].map(get_label)
-    ledgar['train'].to_json(f'data/{args.model_name}/train_{args.start_idx}_{args.end_idx}.json')
+    imdb_data['train'] = imdb_data['train'].map(get_label)
+    imdb_data['train'].to_json(f'imdb_data/{args.model_name}/train.json')
     
     
-    ledgar['validation'] = ledgar['validation'].map(get_label)
-    ledgar['validation'].to_json(f'data/{args.model_name}/valid_{args.start_idx}_{args.end_idx}.json')
+    imdb_data['test'] = imdb_data['test'].map(get_label)
+    imdb_data['test'].to_json(f'imdb_data/{args.model_name}/test.json')
 
     
 if __name__ == '__main__':
