@@ -29,15 +29,16 @@ def main():
     imdb_data['train'] = imdb_data['train'].shuffle(seed=42)
     imdb_data['test'] = imdb_data['test'].shuffle(seed=42)
     
-    
-    pipe_cls = pipeline("zero-shot-classification",
-                          model=args.model_name, device=0)
+    access_token = None
+    pipe_cls = pipeline("zero-shot-classification", 
+                        model=args.model_name, device=0, 
+                        use_auth_token=access_token)
     
     def get_label(example):
         output = pipe_cls(example['text'], labels)
         label = output['labels'][0]
         score = output['scores'][0]
-        if score > 0.50:
+        if score > 0.75:
             return {args.model_name: str2int[label]}
         else:
             return {args.model_name: -1}
